@@ -17,7 +17,7 @@
 //     under the License.
 //
 
-= Getting Started with JAX-WS Web Services
+= Getting Started with Jakarta XML Web Services
 :jbake-type: tutorial
 :jbake-tags: tutorials 
 :jbake-status: published
@@ -29,33 +29,31 @@
 :description: Getting Started with JAX-WS Web Services - Apache NetBeans
 :keywords: Apache NetBeans, Tutorials, Getting Started with JAX-WS Web Services
 
-link:http://www.jcp.org/en/jsr/detail?id=224[+Java API for XML Web Services (JAX-WS), JSR 224+], is an important part of the Java EE platform. A follow-up to the release of Java API for XML-based RPC 1.1(JAX-RPC), JAX-WS simplifies the task of developing web services using Java technology. It addresses some of the issues in JAX-RPC 1.1 by providing support for multiple protocols such as SOAP 1.1, SOAP 1.2, XML, and by providing a facility for supporting additional protocols along with HTTP. JAX-WS uses JAXB 2.0 for data binding and supports customizations to control generated service endpoint interfaces. With its support for annotations, JAX-WS simplifies web service development and reduces the size of runtime JAR files.
+link:https://jakarta.ee/specifications/xml-web-services/3.0/[Jakarta XML Web Services] and link:https://jakarta.ee/specifications/xml-web-services/3.0/apidocs/jakarta.xml.ws/module-summary.html[Jakarta API for XML Web Services (JAX-WS)], is an important part of the Jakarta EE platform. Jakarta XML Web Services (also referred to as JAX-WS) simplifies the task of developing web services using Java technology. It addresses some of the issues in former versions and JAX-RPC 1.1 by providing support for multiple protocols such as SOAP 1.1, SOAP 1.2, HTTP and by providing a facility for supporting additional protocols. JAX-WS uses Jakarta XML Binding 3.0 (formerly JAXB) for data binding and supports customizations to control generated service endpoint interfaces. 
 
-This document demonstrates the basics of using the IDE to develop a JAX-WS web service. After you create the web service, you write three different web service clients that use the web service over a network, which is called "consuming" a web service. The three clients are a Java class in a Java SE application, a servlet, and a JSP page in a web application. A more advanced tutorial focusing on clients is link:./client.html[+Developing JAX-WS Web Service Clients+].
+This document demonstrates the basics of using Apache NetBeans to develop a Jakarta XML Web Service. After you create the web service, you write three different web service clients that use the web service over a network, which is called *_consuming_* a web service. The three clients are a Java class in a Java SE application, a servlet, and a JSP page in a web application. A more advanced tutorial focusing on clients is link:./client.html[+Developing JAX-WS Web Service Clients+].
 
 
 image::images/netbeans-stamp-80-74-73.png[title="Content on this page applies to the NetBeans IDE 7.2, 7.3, 7.4 and 8.0"]
 
-* Consuming the Web Service in
+== Prerequisites
 
-*To follow this tutorial, you need the following software and resources.*
-
+.Required software
+[source#req]
 |===
 |Software or Resource |Version Required 
 
-|link:https://netbeans.org/downloads/index.html[+NetBeans IDE+] |Java EE download bundle 
+|link:https://netbeans.apache.org/download/index.html[+Apache NetBeans+] |Apache NetBeans 12.0 or later
 
-|link:http://www.oracle.com/technetwork/java/javase/downloads/index.html[+Java Development Kit (JDK)+] |JDK 7 or JDK 8
+|link:https://openjdk.java.net/[+Java Development Kit (JDK)+] |JDK 8 or later
  
 
-|Java EE-compliant web or application server |GlassFish Server Open Source Edition 
-Oracle WebLogic Server 
+|Jakarta EE-compliant web or application server or servlet container including Eclipse Metro | Eclipse GlassFish or Payara Server Community Edition 
 |===
 
-*Note: *The GlassFish server can be installed with the Java EE distribution of NetBeans IDE. Alternatively, you can visit the link:https://glassfish.java.net/download.html[+the GlassFish server downloads page+] or the link:http://tomcat.apache.org/download-60.cgi[+Apache Tomcat downloads page+].
+*Note*: Both, GlassFish and Payara server can be installed upon request within Apache NetBeans IDE. Alternatively, you can visit the link:https://glassfish.java.net/download.html[+GlassFish server downloads page+], link:https://www.payara.fish/downloads/payara-platform-community-edition/#x[Payara Community downloads page+] or the link:https://tomee.apache.org/download.html[+Apache TomEE downloads page+], or pick another compliant server and set it up for use within NetBeans IDE.
 
-*Important: *Java EE projects require GlassFish Server or Oracle WebLogic Server 12c.
-
+*Important*: Jakarta EE projects require a compliant server.
 
 [[extschema]]
 == Enabling Access to External Schema
