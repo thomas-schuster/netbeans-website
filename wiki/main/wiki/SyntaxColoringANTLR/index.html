@@ -3,12 +3,12 @@
     <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>How to create support for a new language</title>
+    <title>Using an ANTLR Lexer For Syntax Coloring Tutorial</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Apache NetBeans wiki How_to_create_support_for_a_new_language">
+    <meta name="description" content="Apache NetBeans wiki Using an ANTLR Lexer For Syntax Coloring Tutorial">
     <meta name="author" content="Apache NetBeans">
-    <meta name="description" content="Apache NetBeans wiki How_to_create_support_for_a_new_language">
-    <meta name="keywords" content="Apache NetBeans wiki How_to_create_support_for_a_new_language">
+    <meta name="description" content="Apache NetBeans wiki Using an ANTLR Lexer For Syntax Coloring Tutorial">
+    <meta name="keywords" content="Apache NetBeans wiki Using an ANTLR Lexer For Syntax Coloring Tutorial">
     <meta name="generator" content="Apache NetBeans">
     <link rel="stylesheet" href="../../../../_/css/font-awesome.min.css">
     <link rel="alternate" type="application/atom+xml" title="Apache NetBeans Blog" href="https://netbeans.apache.org/blogs/atom" />
@@ -1609,44 +1609,1642 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../">Apache NetBeans Wiki</a></li>
-    <li><a href="./">How to create support for a new language</a></li>
+    <li><a href="./">Using an ANTLR Lexer For Syntax Coloring Tutorial</a></li>
   </ul>
 </nav>
-<div class="edit-this-page"><a href="https://github.com/apache/netbeans-antora-wiki/edit/main/modules/ROOT/pages/wiki/How_to_create_support_for_a_new_language.adoc">Edit this Page</a></div>
+<div class="edit-this-page"><a href="https://github.com/apache/netbeans-antora-wiki/edit/main/modules/ROOT/pages/wiki/SyntaxColoringANTLR.adoc">Edit this Page</a></div>
 </div>
   <div class="content">
 <aside class="toc sidebar" data-title="Contents" data-levels="2">
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">How to create support for a new language</h1>
+<h1 class="page">Using an ANTLR Lexer For Syntax Coloring Tutorial</h1>
 <div id="toc" class="toc">
 <div id="toctitle"></div>
 <ul class="sectlevel1">
-<li><a href="#_new_language_support_tutorial">New Language Support Tutorial</a></li>
+<li><a href="#_setting_up_the_application">Setting up the Application</a></li>
+<li><a href="#_creating_the_antlr_grammar_for_the_c_minus_language">Creating the ANTLR Grammar For The C Minus Language</a>
+<ul class="sectlevel2">
+<li><a href="#_generate_the_c_minus_files">Generate the C Minus Files</a></li>
+</ul>
+</li>
+<li><a href="#_creating_the_c_minus_file_type">Creating the C Minus File Type</a>
+<ul class="sectlevel2">
+<li><a href="#_providing_an_open_action">Providing An Open Action</a></li>
+</ul>
+</li>
+<li><a href="#_creating_the_c_minus_netbeans_lexer">Creating The C Minus Netbeans Lexer</a>
+<ul class="sectlevel2">
+<li><a href="#_creating_the_c_minus_language_provider">Creating The C Minus Language Provider</a></li>
+<li><a href="#_creating_the_c_minus_tokenid">Creating The C Minus TokenId</a></li>
+<li><a href="#_creating_the_c_minus_language_hierarchy">Creating The C Minus Language Hierarchy</a></li>
+<li><a href="#_creating_the_c_minus_editor_lexer">Creating The C Minus Editor Lexer</a></li>
+</ul>
+</li>
+<li><a href="#_creating_a_dependency_on_the_antlr_api">Creating A Dependency On the ANTLR API</a></li>
+<li><a href="#_finish_wiring_the_netbeans_and_antlr_lexers_together">Finish Wiring The Netbeans and ANTLR Lexers Together</a>
+<ul class="sectlevel2">
+<li><a href="#_provide_a_communication_method_between_the_netbeans_lexer_and_antlr_lexer">Provide A Communication Method between the Netbeans Lexer and ANTLR Lexer</a></li>
+<li><a href="#_provide_catagories_for_syntax_coloring">Provide Catagories For Syntax Coloring</a></li>
+<li><a href="#_one_more_piece_of_wiring">One More Piece Of Wiring</a></li>
+</ul>
+</li>
+<li><a href="#_provide_default_syntax_coloring">Provide Default Syntax Coloring</a></li>
+<li><a href="#_testing_the_syntax_coloring">Testing The Syntax Coloring</a></li>
 </ul>
 </div>
-<div class="sect1">
-<h2 id="_new_language_support_tutorial"><a class="anchor" href="#_new_language_support_tutorial"></a>New Language Support Tutorial</h2>
+<div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>﻿﻿﻿The replacement tutorials for javacc are:</p>
+<p>This tutorial will show you how to write a Netbeans RCP application that provides syntax coloring for a fictional language.</p>
+</div>
+<div class="paragraph">
+<p>During this tutorial we will</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><a href="../../../../tutorial/main/tutorials/nbm-javacc-lexer/" class="xref page">JavaCC Lexer Generator Integration Tutorial for the NetBeans Platform</a></p>
+<p>Create a new file type</p>
 </li>
 <li>
-<p><a href="../../../../tutorial/main/tutorials/nbm-javacc-parser/" class="xref page">JavaCC Parser Generator Integration Tutorial for the NetBeans Platform</a></p>
+<p>Provide Syntax Highlighting by having the Lexer API delegate to an ANTLR lexer</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This tutorial only considers the LEXER portion of a new language.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>This tutorial was designed with Netbeans 6.9 and Java6.</p>
+</div>
+<div class="paragraph">
+<p>This tutorial is based on several ANTLR themed emails on the dev list and from <a href="../New_Language_Support_Tutorial_Antlr/" class="xref page">New Language Support Tutorial Antlr</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_setting_up_the_application"><a class="anchor" href="#_setting_up_the_application"></a>Setting up the Application</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>We&#8217;ll start by creating a new Netbeans Platform application</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Choose File &gt; New Project (Ctrl+Shift+N). Under Categories, select NetBeans Modules. Under Projects, select NetBeans Platform Application. Click Next.</p>
+</li>
+<li>
+<p>In the Name and Location panel, type CMinusEditor in the Project Name field. Click Finish.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The IDE creates the CMinusEditor project. The project container for all the other modules we will create.</p>
+</div>
+<div class="paragraph">
+<p>Missing Image // image:SyntaxColoringANTLR-CreateApplication.png</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_creating_the_antlr_grammar_for_the_c_minus_language"><a class="anchor" href="#_creating_the_antlr_grammar_for_the_c_minus_language"></a>Creating the ANTLR Grammar For The C Minus Language</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>We will create a very small subset of the C language called C Minus. This example can be downloaded from TODO: get link[[]]</p>
+</div>
+<div class="paragraph">
+<p>This is the grammar with a small modification so that we have <strong>named</strong> keyword tokens.
+The parser definition of the language uses literals for "int", "char", and "for". These will be converted to unnamed tokens.
+Therefore, I converted them to TYPE_INT, TYPE_CHAR, and FOR. This will give us <strong>named</strong> tokens so we can color them easier.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-antlr hljs" data-lang="antlr">grammar CMinus;
+options {output=template;}
+
+scope slist {
+    List locals; // must be defined one per semicolon
+    List stats;
+}
+
+/*
+@slist::init {
+    locals = new ArrayList();
+    stats = new ArrayList();
+}
+*/
+
+@header {
+import org.antlr.stringtemplate.*;
+}
+
+program
+scope {
+  List globals;
+  List functions;
+}
+@init {
+  $program::globals = new ArrayList();
+  $program::functions = new ArrayList();
+}
+    :   declaration+
+        -&gt; program(globals={$program::globals},functions={$program::functions})
+    ;
+
+declaration
+    :   variable   {$program::globals.add($variable.st);}
+    |   f=function {$program::functions.add($f.st);}
+    ;
+
+// ack is $function.st ambig?  It can mean the rule's dyn scope or
+// the ref in this rule.  Ack.
+
+variable
+    :   type declarator SEMICOLON
+        -&gt; {$function.size()&gt;0 &amp;&amp; $function::name==null}?
+           globalVariable(type={$type.st},name={$declarator.st})
+        -&gt; variable(type={$type.st},name={$declarator.st})
+    ;
+
+declarator
+    :   ID -&gt; {new StringTemplate($ID.text)}
+    ;
+
+function
+scope {
+    String name;
+}
+scope slist;
+@init {
+  $slist::locals = new ArrayList();
+  $slist::stats = new ArrayList();
+}
+    :   type ID {$function::name=$ID.text;}
+        LEFTPAREN ( p+=formalParameter ( COMMA p+=formalParameter )* )? RIGHTPAREN
+        block
+        -&gt; function(type={$type.st}, name={$function::name},
+                    locals={$slist::locals},
+                    stats={$slist::stats},
+                    args={$p})
+    ;
+
+formalParameter
+    :   type declarator
+        -&gt; parameter(type={$type.st},name={$declarator.st})
+    ;
+
+type
+    :   TYPE_INT  -&gt; type_int()
+    |   TYPE_CHAR -&gt; type_char()
+    |   ID     -&gt; type_user_object(name={$ID.text})
+    ;
+
+block
+    :  LEFTBRACE
+       ( variable {$slist::locals.add($variable.st);} )*
+       ( stat {$slist::stats.add($stat.st);})*
+       RIGHTBRACE
+    ;
+
+stat
+scope slist;
+@init {
+  $slist::locals = new ArrayList();
+  $slist::stats = new ArrayList();
+}
+    : forStat -&gt; {$forStat.st}
+    | expr SEMICOLON -&gt; statement(expr={$expr.st})
+    | block -&gt; statementList(locals={$slist::locals}, stats={$slist::stats})
+    | assignStat SEMICOLON -&gt; {$assignStat.st}
+    | SEMICOLON -&gt; {new StringTemplate(";")}
+    ;
+
+forStat
+scope slist;
+@init {
+  $slist::locals = new ArrayList();
+  $slist::stats = new ArrayList();
+}
+    :   FOR LEFTPAREN e1=assignStat SEMICOLON e2=expr SEMICOLON e3=assignStat RIGHTPAREN block
+        -&gt; forLoop(e1={$e1.st},e2={$e2.st},e3={$e3.st},
+                   locals={$slist::locals}, stats={$slist::stats})
+    ;
+
+assignStat
+    :   ID EQUAL expr -&gt; assign(lhs={$ID.text}, rhs={$expr.st})
+    ;
+
+expr:   condExpr -&gt; {$condExpr.st}
+    ;
+
+condExpr
+    :   a=aexpr
+        (   (  EQUALEQUAL b=aexpr -&gt; equals(left={$a.st},right={$b.st})
+            |  LESSTHAN b=aexpr   -&gt; lessThan(left={$a.st},right={$b.st})
+            )
+        |   -&gt; {$a.st} // else just aexpr
+        )
+    ;
+
+aexpr
+    :   (a=atom -&gt; {$a.st})
+        ( PLUS b=atom -&gt; add(left={$aexpr.st}, right={$b.st}) )*
+    ;
+
+atom
+    : ID -&gt; refVar(id={$ID.text})
+    | INT -&gt; iconst(value={$INT.text})
+    | LEFTPAREN expr RIGHTPAREN -&gt; {$expr.st}
+    ;
+
+TYPE_INT : 'int';
+TYPE_CHAR : 'char';
+FOR : 'for';
+
+ID  :   ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
+    ;
+
+INT	:	('0'..'9')+
+	;
+
+EQUAL : '=';
+EQUALEQUAL : '==';
+LESSTHAN : '&lt;';
+SEMICOLON : ';'	;
+LEFTPAREN : '(';
+RIGHTPAREN : ')';
+LEFTBRACE : '{';
+RIGHTBRACE : '}';
+PLUS : '+';
+COMMA : ',';
+
+
+
+
+WS  :   (' ' | '\t' | '\r' | '\n')+ {$channel=HIDDEN;}
+    ;</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_generate_the_c_minus_files"><a class="anchor" href="#_generate_the_c_minus_files"></a>Generate the C Minus Files</h3>
+<div class="paragraph">
+<p>We can create the required java files using ANTLRWorks which is written in Java.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Open up ANTLRWorks and create a new grammar called CMinus</p>
+</li>
+<li>
+<p>Paste the above into the new file.</p>
+</li>
+<li>
+<p>Save the grammar.</p>
+</li>
+<li>
+<p>Click Generate&#8594;Generate Code (CTRL + SHIFT + G)</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The generated files will be in the <strong>output</strong> folder in the directory where you saved the grammar.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_creating_the_c_minus_file_type"><a class="anchor" href="#_creating_the_c_minus_file_type"></a>Creating the C Minus File Type</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Now we need to create a module to support our C Minus file type.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Right-click the CMinusEditor&#8217;s Modules node in the Projects window and choose Add New.. option.</p>
+</li>
+<li>
+<p>Enter CMinusFiltype as the Project Name.</p>
+</li>
+<li>
+<p>Click the Next button.</p>
+</li>
+<li>
+<p>Enter org.demo.cminus.filetype for the Code Name Base:</p>
+</li>
+<li>
+<p>Change the Module Display Name to CMinus File Type</p>
+</li>
+<li>
+<p>Check the Generate Layer XML checkbox.</p>
+</li>
+<li>
+<p>Click Finish</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Now that the module is created we can use the File Type wizard to generate our file type.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Right-click the org.demo.cminus.filetype package and select New&#8594;File Type.
+If File Type is not on the list click Other then Module Development in the categories view and select File Type in the File Types view.</p>
+</li>
+<li>
+<p>Enter text/x-cm as the MIME Type</p>
+</li>
+<li>
+<p>Enter "cm CM" as the extension (without the quotes)</p>
+</li>
+<li>
+<p>Click the Next button</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Missing Image //image:SyntaxColoringANTLR-NewFileType1.png‎</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Enter CMinus as the Class Prefix</p>
+</li>
+<li>
+<p>Provide an icon. You can use this one by right clicking it and saving it image:SyntaxColoringANTLR-CMinusIcon.png</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Missing Image //image:SyntaxColoringANTLR-NewFileType2.png</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Click the Finish button.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Your project structure should look as follows</p>
+</div>
+<div class="paragraph">
+<p>Missing Image //image:SyntaxColoringANTLR-NewFileTypeView.png</p>
+</div>
+<div class="sect2">
+<h3 id="_providing_an_open_action"><a class="anchor" href="#_providing_an_open_action"></a>Providing An Open Action</h3>
+<div class="paragraph">
+<p>Now we need a way to open cm files.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Right-click on the org.demo.cminus.fileteype package and select New&#8594;Java Package</p>
+</li>
+<li>
+<p>Name the new package org.demo.cminus.filetype.actions</p>
+</li>
+<li>
+<p>Right-click on the org.demo.cminus.filetype.actions package and select New&#8594;Action</p>
+</li>
+<li>
+<p>Select File as the category</p>
+</li>
+<li>
+<p>Under the GLobal Menu Item select the File menu and Postion HERE-&lt;separator&gt;</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Missing Image // image:SyntaxColoringANTLR-NewAction1.png</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Click Next</p>
+</li>
+<li>
+<p>Type OpenAction as the Class Name</p>
+</li>
+<li>
+<p>Type Open File as the display name</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Missing Image //image:SyntaxColoringANTLR-NewAction2.png</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Click Finish</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Your project should look as follows</p>
+</div>
+<div class="paragraph">
+<p>Missing Image //image:SyntaxColoringANTLR-NewActionView.png</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Open the OpenAction.java file and paste the following code in.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package org.demo.cminus.filetype.actions;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileFilter;
+import org.openide.cookies.EditorCookie;
+import org.openide.filesystems.FileChooserBuilder;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
+
+public final class OpenAction implements ActionListener {
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+     FileChooserBuilder fcb = new FileChooserBuilder(org.demo.cminus.filetype.actions.OpenAction.class);
+        fcb.setApproveText("Open");
+        fcb.setFileFilter(new CMinusFileFilter());
+
+        JFileChooser jfc = fcb.createFileChooser();
+
+        if (jfc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+            try {
+                File file = jfc.getSelectedFile();
+                FileObject foSelectedFile = FileUtil.toFileObject(file);
+
+                DataObject obj = DataObject.find(foSelectedFile);
+                EditorCookie ec = obj.getLookup().lookup(EditorCookie.class);
+
+                if (ec != null) {
+                    ec.open();
+                }
+
+            } catch (DataObjectNotFoundException donfe) {
+            }
+        }
+    }
+
+    private final class CMinusFileFilter extends FileFilter{
+
+        @Override
+        public boolean accept(File pathname) {
+
+            if (pathname.isDirectory()){
+                return true;
+            }
+
+            String[] path  = pathname.getPath().split("\\.");
+            if (path[path.length - 1].equalsIgnoreCase("cm")){
+                return true;
+            }
+
+            return false;
+        }
+
+        @Override
+        public String getDescription() {
+            return "CMinus files";
+        }
+
+    }
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Save the file and run your application.</p>
+</li>
+<li>
+<p>Create a test CM file with the following input.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">char c;
+int x;
+int foo(int y, char d){
+  int i;
+  for (i=0; i&lt;3; i=i+1){
+    x=3;
+    y=3;
+  }
+}</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>In your running application click File&#8594;Open</p>
+</li>
+<li>
+<p>Navigate to the test file you created and open it.</p>
+<div class="paragraph">
+<p>Your should see something like this.</p>
+</div>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Missing Image // image:SyntaxColoringANTLR-NewFileTypeComplete.png</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_creating_the_c_minus_netbeans_lexer"><a class="anchor" href="#_creating_the_c_minus_netbeans_lexer"></a>Creating The C Minus Netbeans Lexer</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Now comes the meat of our tutorial. In order to provide syntax coloring we need to tap into the Lexer APi. To get started we need to create a new module.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Create a new module and name it CMinusSyntaxHighlighter</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>Use org.demo.cminus.syntaxhighlighter as the Code Name Base</p>
+</li>
+<li>
+<p>Use CMinus Syntax Highlighter</p>
+</li>
+<li>
+<p>Check the Generate XML Layer box</p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>Add the Lexer API to your application</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>Right-click on the CMinusEditor and select Properties</p>
+</li>
+<li>
+<p>Select the Libraries Category</p>
+</li>
+<li>
+<p>Expand the ide cluster</p>
+</li>
+<li>
+<p>It will complain about needing the Editor Utilities module. Click the Resolve button to automatically handle this.</p>
+</li>
+<li>
+<p>Click OK</p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>Set a dependency on the Lexer API</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>Right-click Click the CMinus Syntax Highlighter module and select Properties</p>
+</li>
+<li>
+<p>Go to the Libraries category</p>
+</li>
+<li>
+<p>Click Add Dependency</p>
+</li>
+<li>
+<p>Type in Lexer in the filter box and choose the Lexer module</p>
+</li>
+<li>
+<p>Click the OK button</p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>Set a dependency on the Lookup API</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>Right-click Click the CMinus Syntax Highlighter module and select Properties</p>
+</li>
+<li>
+<p>Go to the Libraries category</p>
+</li>
+<li>
+<p>Click Add Dependency</p>
+</li>
+<li>
+<p>Type in Lookup in the filter box and choose the Lookup module</p>
+</li>
+<li>
+<p>Click the OK button</p>
+</li>
+</ol>
+</div>
+</li>
+</ol>
+</div>
+<div class="sect2">
+<h3 id="_creating_the_c_minus_language_provider"><a class="anchor" href="#_creating_the_c_minus_language_provider"></a>Creating The C Minus Language Provider</h3>
+<div class="paragraph">
+<p>Now we need a way to let the Application know that we are providing a language. ICreate a new Java file in the org.demo.cminus.syntaxhighlighter package and name it CMLanguageProvider</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Have the class extend LanguageProvider</p>
+</li>
+<li>
+<p>Press ctrl-shift-i to fix the imports.</p>
+</li>
+<li>
+<p>Now click the lightbulb to implement all abstract methods.</p>
+</li>
+<li>
+<p>Implement the <strong>findLanguage</strong> method as follows</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    @Override
+    public Language&lt;?&gt; findLanguage(String mimeType) {
+        if ("text/x-cm".equals(mimeType)){
+            return new CMinusLanguageHierarchy().language();
+        }
+
+        return null;
+    }</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Have the <strong>findLanguageEmbedding</strong> method return null;</p>
+</li>
+<li>
+<p>Finally, decorate the class with the following annotator</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@org.openide.util.lookup.ServiceProvider(service=org.netbeans.spi.lexer.LanguageProvider.class)
+public class CMinusLanguageProvider extends LanguageProvider {</code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_creating_the_c_minus_tokenid"><a class="anchor" href="#_creating_the_c_minus_tokenid"></a>Creating The C Minus TokenId</h3>
+<div class="paragraph">
+<p>Now we&#8217;re going to implement the class that will represent CMinus tokens</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Create a new Java file in the org.demo.cminus.syntaxhighlighter package and name it CMinusTokenId</p>
+</li>
+<li>
+<p>Have the class implement TokenId</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class CMinusTokenId implements TokenId {</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Press ctrl-shift-i to fix the imports.</p>
+</li>
+<li>
+<p>Now click the lightbulb to implement all abstract methods.</p>
+</li>
+<li>
+<p>create three private fields name, primaryCategory, and id</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    private final String name;
+    private final String primaryCategory;
+    private final int id;</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Create constructor as follows</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    public CMinusTokenId(
+            String name,
+            String primaryCategory,
+            int id) {
+        this.name = name;
+        this.primaryCategory = primaryCategory;
+        this.id = id;
+    }</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Have the <strong>name()</strong> method return this.name</p>
+</li>
+<li>
+<p>Have the <strong>ordinal()</strong> method return this.id</p>
+</li>
+<li>
+<p>Have the <strong>primaryCategory()</strong> method return this.primaryCategory</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    @Override
+    public String name() {
+        return name;
+    }
+
+    @Override
+    public int ordinal() {
+        return id;
+    }
+
+    @Override
+    public String primaryCategory() {
+        return primaryCategory;
+    }</code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_creating_the_c_minus_language_hierarchy"><a class="anchor" href="#_creating_the_c_minus_language_hierarchy"></a>Creating The C Minus Language Hierarchy</h3>
+<div class="paragraph">
+<p>Now we will create our entry point into the Lexer API. The LanguageHierarchy class</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Create a new Java file in the org.demo.cminus.syntaxhighlighter package and name it CMinusLanguageHierarchy</p>
+</li>
+<li>
+<p>Have the class extend LanguageHierarchy&lt;CMinusTokenId&gt;</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class CMinusLanguageHierarchy extends LanguageHierarchy&lt;CMinusTokenId&gt;{</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Press ctrl-shift-i to fix the imports.</p>
+</li>
+<li>
+<p>Now click the lightbulb to implement all abstract methods.</p>
+</li>
+<li>
+<p>We need a list of tokens and a map for token id&#8217;s to tokens</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    private static List&lt;CMinusTokenId&gt; tokens;
+    private static Map&lt;Integer, CMinusTokenId&gt; idToToken;</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>We also need a language instance</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    private static final Language&lt;CMinusTokenId&gt; language = new CMinusLanguageHierarchy().language();</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>And a way to get that language</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    public static Language&lt;CMinusTokenId&gt; getLanguage() {
+        return language;
+    }</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Now we need a way to initialize our CMinusTokenId&#8217;s with the tokens generated from ANTLR</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    /**
+     * Initializes the list of tokens with IDs generated from the ANTLR
+     * token file.
+     */
+    private static void init() {
+        AntlrTokenReader reader = new AntlrTokenReader();
+        tokens = reader.readTokenFile();
+        idToToken = new HashMap&lt;Integer, CMinusTokenId&gt;();
+        for (CMinusTokenId token : tokens) {
+            idToToken.put(token.ordinal(), token);
+        }
+    }</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Now we need a way to get a token based off of it&#8217;s id</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    /**
+     * Returns an actual CMinusTokenId from an id. This essentially allows
+     * the syntax highlighter to decide the color of specific words.
+     * @param id
+     * @return
+     */
+    static synchronized CMinusTokenId getToken(int id) {
+        if (idToToken == null) {
+            init();
+        }
+        return idToToken.get(id);
+    }</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Now for the overridden methods.</p>
+</li>
+<li>
+<p>For the <strong>createTokenIds()</strong> method we&#8217;ll just return our list of tokens. First we&#8217;ll make sure it has been initialized</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    /**
+     * Initializes the tokens in use.
+     *
+     * @return
+     */
+    @Override
+    protected synchronized Collection&lt;CMinusTokenId&gt; createTokenIds() {
+        if (tokens == null) {
+            init();
+        }
+        return tokens;
+    }</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>We need lexer object to do the highlighting with. We&#8217;ll be creating this shortly.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    /**
+     * Creates a lexer object for use in syntax highlighting.
+     *
+     * @param info
+     * @return
+     */
+    @Override
+    protected synchronized Lexer&lt;CMinusTokenId&gt; createLexer(LexerRestartInfo&lt;CMinusTokenId&gt; info) {
+        return new CMinusEditorLexer(info);
+    }</code></pre>
+</div>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>And we need to say which MimeType this is all for</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    /**
+     * Returns the mime type of this programming language ("text/x-cm). This
+     * allows NetBeans to load the appropriate editors and file loaders when
+     * a file with the cm file extension is loaded.
+     *
+     * @return
+     */
+    @Override
+    protected String mimeType() {
+        return "text/x-cm";
+    }</code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_creating_the_c_minus_editor_lexer"><a class="anchor" href="#_creating_the_c_minus_editor_lexer"></a>Creating The C Minus Editor Lexer</h3>
+<div class="paragraph">
+<p>Now we need to create the Editor Lexer. This will the be bridge between the Netbeans Lexer and the ANTLR lexer</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Create a new Java file in the org.demo.cminus.syntaxhighlighter package and name it CMinusEditorLexer</p>
+</li>
+<li>
+<p>Have the class implement Lexer&lt;CMinusTokenId&gt;</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class CMinusEditorLexer implements Lexer&lt;CMinusTokenId&gt;{</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Press Ctrl-Shift-I to fix the imports</p>
+</li>
+<li>
+<p>Click the lightbulb icon to implement all abstract methods</p>
+</li>
+<li>
+<p>We need fields for LexerRestartInfo and our ANTLR lexer</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    private LexerRestartInfo&lt;CMinusTokenId&gt; info;
+    private CMinusLexer lexer;</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Create a constructor as follows</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    public CMinusEditorLexer(LexerRestartInfo&lt;CMinusTokenId&gt; info) {
+        this.info = info;
+        ANTLRCharStream charStream = new ANTLRCharStream(info.input(), "CMinusEditor", true);
+        lexer = new CMinusLexer(charStream);
+    }</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Override the <strong>nextToken()</strong> method as follows</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    @Override
+    public org.netbeans.api.lexer.Token&lt;CMinusTokenId&gt; nextToken() {
+        org.antlr.runtime.Token token = lexer.nextToken();
+
+        Token&lt;CMinusTokenId&gt; createdToken = null;
+
+        if (token.getType() != -1){
+            CMinusTokenId tokenId  = CMinusLanguageHierarchy.getToken(token.getType());
+            createdToken = info.tokenFactory().createToken(tokenId);
+        }  else if(info.input().readLength() &gt; 0){
+            CMinusTokenId tokenId  = CMinusLanguageHierarchy.getToken(CMinusLexer.WS);
+            createdToken = info.tokenFactory().createToken(tokenId);
+        }
+
+        return createdToken;
+    }</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Implement the <strong>state()</strong> and <strong>release()</strong> methods as follows</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">   @Override
+   public Object state() {
+       return null;
+   }
+
+   @Override
+   public void release() {
+   }</code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_creating_a_dependency_on_the_antlr_api"><a class="anchor" href="#_creating_a_dependency_on_the_antlr_api"></a>Creating A Dependency On the ANTLR API</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Download the ANTLR runtime</p>
+</li>
+<li>
+<p>Wrap the runtime into a Netbeans Module</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Right-click the CMinusEditor module node and choose Add New Library</p>
+</li>
+<li>
+<p>For the Library browse to the ANTLR jar</p>
+</li>
+<li>
+<p>Click Next</p>
+</li>
+<li>
+<p>Type ANTLR as the project name</p>
+</li>
+<li>
+<p>Click Next</p>
+</li>
+<li>
+<p>Type org.antlr.runtime for the CodeName Base</p>
+</li>
+<li>
+<p>Type ANTLR as the display name</p>
+</li>
+<li>
+<p>Click Finish</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Add the ANTLR module as a dependency for the CMinus Syntax Highlighter module</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Right-click CMinus Syntax Highlighter module and choose properties</p>
+</li>
+<li>
+<p>Go to the Libraries category</p>
+</li>
+<li>
+<p>Click Add Dependency</p>
+</li>
+<li>
+<p>Select ANTLR</p>
+</li>
+<li>
+<p>Click the okay button</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_finish_wiring_the_netbeans_and_antlr_lexers_together"><a class="anchor" href="#_finish_wiring_the_netbeans_and_antlr_lexers_together"></a>Finish Wiring The Netbeans and ANTLR Lexers Together</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_provide_a_communication_method_between_the_netbeans_lexer_and_antlr_lexer"><a class="anchor" href="#_provide_a_communication_method_between_the_netbeans_lexer_and_antlr_lexer"></a>Provide A Communication Method between the Netbeans Lexer and ANTLR Lexer</h3>
+<div class="paragraph">
+<p>Now we only a little bit of wiring left to do.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Create a new package in the CMinus Syntax Highlighter module and name it org.demo.cminus.syntaxhighlighter.utils</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>Some information for antlr integration:</p>
+<p>First we&#8217;ll create then ANTLRCharStream. This will allow the ANTLR lexer to use the Netbeans Lexer as input.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Create a new java file in the org.demo.cminus.syntaxhighlighter.utils package and name it ANTLRCharStream.</p>
+</li>
+<li>
+<p>Paste the below contents into the file. This version of the files differs slightly than the one found in the <a href="../Netbeans_Rcp_Antlr_Integration_Index/" class="xref page">ANTLR Integration Tutorials</a>.
+This one allows you to ignore case while lexing.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+package org.demo.cminus.syntaxhighlighter.utils;
+
+
+import java.util.ArrayList;
+import java.util.List;
+import org.antlr.runtime.CharStream;
+import org.netbeans.spi.lexer.LexerInput;
+
+/**
+ * @author jonny
+ */
+public class AntlrCharStream implements CharStream {
+
+    private class CharStreamState {
+
+        int index;
+        int line;
+        int charPositionInLine;
+    }
+
+    private int line = 1;
+    private int charPositionInLine = 0;
+    private LexerInput input;
+    private String name;
+    private int index = 0;
+    private List&lt;CharStreamState&gt; markers;
+    private int markDepth = 0;
+    private int lastMarker;
+
+    private boolean ignoreCase = false;
+
+    public AntlrCharStream(LexerInput input, String name, boolean ignoreCase) {
+        this.input = input;
+        this.name = name;
+        this.ignoreCase = ignoreCase;
+    }
+
+    @Override
+    public String substring(int start, int stop) {
+        return input.readText(start, stop).toString();
+    }
+
+    @Override
+    public int LT(int i) {
+        return LA(i);
+    }
+
+    @Override
+    public int getLine() {
+        return line;
+    }
+
+    @Override
+    public void setLine(int line) {
+        this.line = line;
+    }
+
+    @Override
+    public void setCharPositionInLine(int pos) {
+        this.charPositionInLine = pos;
+    }
+
+    @Override
+    public int getCharPositionInLine() {
+        return charPositionInLine;
+    }
+
+    @Override
+    public void consume() {
+        int c = input.read();
+        index++;
+        charPositionInLine++;
+
+        if (c == '\n') {
+            line++;
+            charPositionInLine = 0;
+        }
+    }
+
+    @Override
+    public int LA(int i) {
+        if (i == 0) {
+            return 0; // undefined
+        }
+
+        int c = 0;
+        for (int j = 0; j &lt; i; j++) {
+            c = read();
+        }
+        backup(i);
+
+        if (ignoreCase &amp;&amp; (c != -1)){
+            return Character.toLowerCase((char)c);
+        } else {
+            return c;
+        }
+    }
+
+    @Override
+    public int mark() {
+        if (markers == null) {
+            markers = new ArrayList&lt;CharStreamState&gt;();
+            markers.add(null); // depth 0 means no backtracking, leave blank
+        }
+        markDepth++;
+        CharStreamState state = null;
+        if (markDepth &gt;= markers.size()) {
+            state = new CharStreamState();
+            markers.add(state);
+        } else {
+            state = markers.get(markDepth);
+        }
+        state.index = index;
+        state.line = line;
+        state.charPositionInLine = charPositionInLine;
+        lastMarker = markDepth;
+
+        return markDepth;
+    }
+
+    @Override
+    public void rewind() {
+        rewind(lastMarker);
+    }
+
+    @Override
+    public void rewind(int marker) {
+        CharStreamState state = markers.get(marker);
+        // restore stream state
+        seek(state.index);
+        line = state.line;
+        charPositionInLine = state.charPositionInLine;
+        release(marker);
+    }
+
+    @Override
+    public void release(int marker) {
+        // unwind any other markers made after m and release m
+        markDepth = marker;
+        // release this marker
+        markDepth--;
+    }
+
+    @Override
+    public void seek(int index) {
+        if (index &lt; this.index) {
+            backup(this.index - index);
+            this.index = index; // just jump; don't update stream state (line, ...)
+            return;
+        }
+
+        // seek forward, consume until p hits index
+        while (this.index &lt; index) {
+            consume();
+        }
+    }
+
+    @Override
+    public int index() {
+        return index;
+    }
+
+    @Override
+    public int size() {
+        return -1; //unknown...
+    }
+
+    @Override
+    public String getSourceName() {
+        return name;
+    }
+
+    private int read() {
+        int result = input.read();
+        if (result == LexerInput.EOF) {
+            result = CharStream.EOF;
+        }
+
+        return result;
+    }
+
+    private void backup(int count) {
+        input.backup(count);
+    }
+}</code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_provide_catagories_for_syntax_coloring"><a class="anchor" href="#_provide_catagories_for_syntax_coloring"></a>Provide Catagories For Syntax Coloring</h3>
+<div class="paragraph">
+<p>Every time you change your ANTLR grammar and regenerate the files the tokens are given different Ids. We&#8217;ll provide a utility class that helps in that situation.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Create a new java class in the org.demo.cminus.syntaxhighlighter package and name it ANTLRTokenReader
+This class will read in the .tokens file generated by ANTLR and map token names to categories.
+This way we don&#8217;t care what the .tokens file looks like. Any new tokens will be put in the category "separator"</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+package org.demo.cminus.syntaxhighlighter.utils;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import org.demo.cminus.syntaxhighlighter.CMinusTokenId;
+
+/**
+ *
+ * @author James Reid
+ */
+public class ANTLRTokenReader {
+
+    private HashMap&lt;String, String&gt; tokenTypes = new HashMap&lt;String, String&gt;();
+    private ArrayList&lt;CMinusTokenId&gt; tokens = new ArrayList&lt;CMinusTokenId&gt;();
+
+    public ANTLRTokenReader() {
+        init();
+    }
+
+    /**
+     * Initializes the map to include any keywords in the Hop Programming language.
+     */
+    private void init() {
+
+        tokenTypes.put("TYPE_INT", "type");
+        tokenTypes.put("TYPE_CHAR", "type");
+
+        tokenTypes.put("FOR", "keyword");
+
+        tokenTypes.put("ID", "identifier");
+        tokenTypes.put("INT", "number");
+
+    }
+
+    /**
+     * Reads the token file from the ANTLR parser and generates
+     * appropriate tokens.
+     *
+     * @return
+     */
+    public List&lt;CMinusTokenId&gt; readTokenFile() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        InputStream inp = classLoader.getResourceAsStream("org/demo/cminus/syntaxhighlighter/utils/CMinus.tokens");
+        BufferedReader input = new BufferedReader(new InputStreamReader(inp));
+        readTokenFile(input);
+        return tokens;
+    }
+
+    /**
+     * Reads in the token file.
+     *
+     * @param buff
+     */
+    private void readTokenFile(BufferedReader buff) {
+        String line = null;
+        try {
+            while ((line = buff.readLine()) != null) {
+                String[] splLine = line.split("=");
+                String name = splLine[0];
+                int tok = Integer.parseInt(splLine[1].trim());
+                CMinusTokenId id;
+                String tokenCategory = tokenTypes.get(name);
+                if (tokenCategory != null) {
+                    //if the value exists, put it in the correct category
+                    id = new CMinusTokenId(name, tokenCategory, tok);
+                } else {
+                    //if we don't recognize the token, consider it to a separator
+                    id = new CMinusTokenId(name, "separator", tok);
+                }
+                //add it into the vector of tokens
+                tokens.add(id);
+            }
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+    }
+}</pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Now add a dependency on Utilities API</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_one_more_piece_of_wiring"><a class="anchor" href="#_one_more_piece_of_wiring"></a>One More Piece Of Wiring</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Now we need to include our ANTLR generated lexer</p>
+</li>
+<li>
+<p>Open up a file browser and navigate to the <strong>output</strong> folder that ANTLR placed the generated files in</p>
+</li>
+<li>
+<p>Copy the CMinusLexer file</p>
+</li>
+<li>
+<p>In Netbeans right-click on the org.demo.cminus.syntaxhighlighter package and choose Paste</p>
+</li>
+<li>
+<p>Now we need to provide the .tokens file.</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Copy the CMinus.tokens file in the <strong>output</strong> folder</p>
+</li>
+<li>
+<p>In Netbeans right-click on the org.demo.cminus.syntaxhighlighter.utils package and choose Paste</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>We now have all the pieces needed to actually run the application. However, first we&#8217;ll create some default colorings.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_provide_default_syntax_coloring"><a class="anchor" href="#_provide_default_syntax_coloring"></a>Provide Default Syntax Coloring</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Now we&#8217;ll create some default colorings.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Create a new XML document in the org.demo.cminus.syntaxhighlighter package and name it SyntaxColors.xml</p>
+</li>
+<li>
+<p>Paste the contents below into the file.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+
+&lt;!DOCTYPE fontscolors PUBLIC "-//NetBeans//DTD Editor Fonts and Colors settings 1.1//EN" "http://www.netbeans.org/dtds/EditorFontsColors-1_1.dtd"&gt;
+&lt;fontscolors&gt;
+
+    &lt;fontcolor name="keyword"           foreColor="blue" default="default"/&gt;
+    &lt;fontcolor name="type"              foreColor="orange" default="default"/&gt;
+    &lt;fontcolor name="number"            foreColor="red" default="default"/&gt;
+
+&lt;/fontscolors&gt;</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Now open up the layer.xml file in the org.demo.cminus.syntaxhighlighter package and paste the below contents</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.2//EN" "http://www.netbeans.org/dtds/filesystem-1_2.dtd"&gt;
+&lt;filesystem&gt;
+    &lt;folder name="Editors"&gt;
+        &lt;folder name="text"&gt;
+            &lt;folder name="x-cm"&gt;
+                &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.demo.cminus.syntaxhighlighter.Bundle"/&gt;
+                &lt;folder name="FontsColors"&gt;
+                    &lt;folder name="NetBeans"&gt;
+                        &lt;folder name="Defaults"&gt;
+                            &lt;file name="SyntaxColors.xml" url="SyntaxColors.xml"&gt;
+                                &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.demo.cminus.syntaxhighlighter.Bundle"/&gt;
+                            &lt;/file&gt;
+                        &lt;/folder&gt;
+                    &lt;/folder&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Now open the Bundle.properties file and paste the below in to it</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-ini hljs" data-lang="ini">OpenIDE-Module-Name=CMinus Syntax Highlighter
+text/x-cm=C Minus
+type=Type
+keyword=Keyword
+identifier=Identifier
+number=Number</code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_testing_the_syntax_coloring"><a class="anchor" href="#_testing_the_syntax_coloring"></a>Testing The Syntax Coloring</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Now we are ready to test. Go ahead and run the application. Open up your test .cm file and you should see&#8230;&#8203;</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
-<p><a href="../Netbeans_Rcp_Antlr_Integration_Index/" class="xref page">Netbeans Rcp Antlr Integration Index</a></p>
+<p>Missing Image // image:SyntaxColoringANTLR-NewFileTypeComplete.png</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Wait!? All that and it doesn&#8217;t work?. Never fear, we just need to add a couple of more modules to our application.</p>
+</li>
+<li>
+<p>Right-click the CMinusEditor Module and select Properties.</p>
+</li>
+<li>
+<p>Go to the libraries category.</p>
+</li>
+<li>
+<p>Expand the IDE cluster.</p>
+</li>
+<li>
+<p>Scroll down to Editor Options and select it.</p>
+</li>
+<li>
+<p>Select the Resolve button to fix other dependencies.</p>
+</li>
+<li>
+<p>Click OK to close the dialog.</p>
+</li>
+<li>
+<p>Clean and Rebuild your application.</p>
+</li>
+<li>
+<p>In your application open up the test .cm file and you should see..</p>
+<div class="paragraph">
+<p>Missing Image // image:SyntaxColoringANTLR-NewFileTypeComplete.png</p>
+</div>
+</li>
+<li>
+<p>What1? It still doesn&#8217;t work!? This is where I got hung up for a long time.
+The only way I could get syntax highlighting to work was to include the Plain Editor Library and Plain Editor modules.
+I did not like doing it that way. So I dug through the sources to see how the Plain Editor did it.
+The first thing I see is <strong>"If you need this class you are doing something wrong"</strong>. So I set out on a mission to figure out how to make it work.
+After several several hours of digging and following stack traces it came down to one simple thing. We need an editor kit that supports the Lexer API.</p>
+</li>
+<li>
+<p>Open up your layer file for the CMinus Syntax Highlighter module and add the following entry</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;file name="org-netbeans-modules-editor-NbEditorKit.instance"/&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>right under Editors/text/x-cm/. It should look like this when you are done.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;filesystem&gt;
+    &lt;folder name="Editors"&gt;
+        &lt;folder name="text"&gt;
+            &lt;folder name="x-cm"&gt;
+               &lt;file name="org-netbeans-modules-editor-NbEditorKit.instance"/&gt;
+
+                &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.demo.cminus.syntaxhighlighter.Bundle"/&gt;
+                &lt;folder name="FontsColors"&gt;
+                    &lt;folder name="NetBeans"&gt;
+                        &lt;folder name="Defaults"&gt;
+                            &lt;file name="SyntaxColors.xml" url="SyntaxColors.xml"&gt;
+                                &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="org.demo.cminus.syntaxhighlighter.Bundle"/&gt;
+                            &lt;/file&gt;
+                        &lt;/folder&gt;
+                    &lt;/folder&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/filesystem&gt;</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Clean and build your application.</p>
+</li>
+<li>
+<p>Run the application again</p>
+</li>
+<li>
+<p>Open your test .cm file and see</p>
+<div class="paragraph">
+<p>Missing Image //image:SyntaxColoringANTLR-finished.png</p>
+</div>
+</li>
+<li>
+<p>And that&#8217;s how you include syntax highlighting in a stand alone Netbeans Platform App.</p>
+</li>
+<li>
+<p>A big thank you to Andreas Stefik and his Sodbeans project. Over the past year or so Andreas has been asking and answering questions on the netbeans dev list. Which has lead to a wealth of knowledge in the integration of ANTLR into Netbeans Applications.</p>
+</li>
+</ul>
 </div>
 </div>
 </div>

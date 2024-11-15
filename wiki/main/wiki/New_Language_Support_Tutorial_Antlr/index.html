@@ -3,12 +3,12 @@
     <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>How to create support for a new language</title>
+    <title>New Language Support Tutorial Antlr</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Apache NetBeans wiki How_to_create_support_for_a_new_language">
+    <meta name="description" content="Apache NetBeans wiki New Language Support Tutorial Antlr">
     <meta name="author" content="Apache NetBeans">
-    <meta name="description" content="Apache NetBeans wiki How_to_create_support_for_a_new_language">
-    <meta name="keywords" content="Apache NetBeans wiki How_to_create_support_for_a_new_language">
+    <meta name="description" content="Apache NetBeans wiki New Language Support Tutorial Antlr">
+    <meta name="keywords" content="Apache NetBeans wiki New Language Support Tutorial Antlr">
     <meta name="generator" content="Apache NetBeans">
     <link rel="stylesheet" href="../../../../_/css/font-awesome.min.css">
     <link rel="alternate" type="application/atom+xml" title="Apache NetBeans Blog" href="https://netbeans.apache.org/blogs/atom" />
@@ -1609,44 +1609,818 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../">Apache NetBeans Wiki</a></li>
-    <li><a href="./">How to create support for a new language</a></li>
+    <li><a href="./">New Language Support Tutorial Antlr</a></li>
   </ul>
 </nav>
-<div class="edit-this-page"><a href="https://github.com/apache/netbeans-antora-wiki/edit/main/modules/ROOT/pages/wiki/How_to_create_support_for_a_new_language.adoc">Edit this Page</a></div>
+<div class="edit-this-page"><a href="https://github.com/apache/netbeans-antora-wiki/edit/main/modules/ROOT/pages/wiki/New_Language_Support_Tutorial_Antlr.adoc">Edit this Page</a></div>
 </div>
   <div class="content">
 <aside class="toc sidebar" data-title="Contents" data-levels="2">
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">How to create support for a new language</h1>
+<h1 class="page">New Language Support Tutorial Antlr</h1>
 <div id="toc" class="toc">
 <div id="toctitle"></div>
 <ul class="sectlevel1">
-<li><a href="#_new_language_support_tutorial">New Language Support Tutorial</a></li>
+<li><a href="#_lexer_for_syntax_coloring">Lexer for Syntax Coloring</a>
+<ul class="sectlevel2">
+<li><a href="#_1_grammar_file">1) Grammar file:</a></li>
+<li><a href="#_2_languagehierarchy">2) LanguageHierarchy</a></li>
+<li><a href="#_3_tokenid">3) TokenId</a></li>
+<li><a href="#_4_integrate_lexer_to_netbeans">4) Integrate lexer to NetBeans</a></li>
+<li><a href="#_5_configuration_file_changes">5) Configuration File Changes</a></li>
+</ul>
+</li>
+<li><a href="#_parser_for_syntax_error">Parser for Syntax Error</a>
+<ul class="sectlevel2">
+<li><a href="#_1_integrate_parser_into_netbeans_platform">1) Integrate parser into NetBeans Platform</a></li>
+<li><a href="#_2_syntaxerrorshighlightingtask">2) SyntaxErrorsHighlightingTask</a></li>
+<li><a href="#_3_sqleditorparserfactory_and_syntaxerrorshighlightingtaskfactory">3) SqlEditorParserFactory And SyntaxErrorsHighlightingTaskFactory</a></li>
+<li><a href="#_4_configuration_file_changes">4) Configuration File Changes</a></li>
+</ul>
+</li>
 </ul>
 </div>
-<div class="sect1">
-<h2 id="_new_language_support_tutorial"><a class="anchor" href="#_new_language_support_tutorial"></a>New Language Support Tutorial</h2>
+<div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>﻿﻿﻿The replacement tutorials for javacc are:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><a href="../../../../tutorial/main/tutorials/nbm-javacc-lexer/" class="xref page">JavaCC Lexer Generator Integration Tutorial for the NetBeans Platform</a></p>
-</li>
-<li>
-<p><a href="../../../../tutorial/main/tutorials/nbm-javacc-parser/" class="xref page">JavaCC Parser Generator Integration Tutorial for the NetBeans Platform</a></p>
-</li>
-</ul>
+<p>NetBeans is promoting some new APIs for new language support. This allows you to create your own lexer and parser from scratch.
+However, you can also plug in a 3rd party tool such as JavaCC or ANTLR. There is already a really great <a href="../How_to_create_support_for_a_new_language/" class="xref page">tutorial</a> for plugging in JavaCC.
+However, it is not immediately obvious on how to plug in ANTLR. What I will show here is how I plugged in ANTLR v3 for the SQLRaider project.
+I also encourage you to read the original tutorial as it talks in more detail about what each of these steps is really doing.</p>
 </div>
 <div class="paragraph">
-<p>Some information for antlr integration:</p>
+<p>This is part of the <a href="../Netbeans_Rcp_Antlr_Integration_Index/" class="xref page">ANTLR integration tutorials</a>.</p>
 </div>
 <div class="paragraph">
-<p><a href="../Netbeans_Rcp_Antlr_Integration_Index/" class="xref page">Netbeans Rcp Antlr Integration Index</a></p>
+<p>I found this very helpful, I&#8217;ve added some notes on what I learned implementing syntax coloring and error reporting on the page <a href="../Antlr_Notes/" class="xref page">Antlr_Notes</a> (Joe Areeda)</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_lexer_for_syntax_coloring"><a class="anchor" href="#_lexer_for_syntax_coloring"></a>Lexer for Syntax Coloring</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_1_grammar_file"><a class="anchor" href="#_1_grammar_file"></a>1) Grammar file:</h3>
+<div class="paragraph">
+<p>This is what my grammer file looks like right now. I am pretty new to ANTLR, but this grammar already handles some pretty complex syntax. What is relevant to enable syntax coloring is the code starting with 'SELECT' which will be used as the tokens. This grammar will generate a file called SqlLexer.java.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-antlr hljs" data-lang="antlr">grammar Oracle;
+
+@header{package com.sqlraider.editor.parser;}
+@lexer::header{package com.sqlraider.editor.lexer;}
+
+@members {
+	public List&lt;SyntaxError&gt; syntaxErrors = new ArrayList&lt;SyntaxError&gt;();
+
+	@Override
+	public String getErrorMessage(RecognitionException e, String[] tokenNames) {
+		String message = super.getErrorMessage(e, tokenNames);
+		SyntaxError syntaxError = new SyntaxError();
+		syntaxError.exception = e;
+		syntaxError.message = message;
+		syntaxErrors.add(syntaxError);
+		return message;
+	}
+
+	public static class SyntaxError {
+		public RecognitionException exception;
+		public String message;
+		public int line;
+		public int charPositionInLine;
+	}
+}
+
+prog: selectStatment;
+
+selectStatment: SELECT columns FROM tables (WHERE equalsStatment)? (ORDER_BY orderByClause)?;
+
+columns: columnName (COMMA columnName)*;
+
+/*
+Defines one of the following:
+- name and alias
+- asterisk
+- alias followed by an asterisk
+- inner select and alias
+*/
+columnName: (NAME NAME?|ASTERISK|NAME_ASTERISK|innerSelect NAME?);
+
+tables: tableName joinTables*;
+
+tableName: (NAME|innerSelect) NAME?;
+
+joinTables: JOIN tableName joinCondition;
+
+joinCondition: ON equalsStatment;
+
+innerSelect: LPAREN selectStatment RPAREN;
+
+equalsStatment: equals (AND equals)*;
+
+equals: leftOfEquals (OPERATORS rightOfEquals|NULL);
+
+leftOfEquals: NAME;
+
+rightOfEquals: QUOTED_STATEMENT
+           | innerSelect
+           | LPAREN (QUOTED_STATEMENT|NAME) RPAREN
+           | NAME
+           ;
+
+orderByClause: NAME (COMMA NAME)*;
+
+/* select */
+SELECT: ('S'|'s')('E'|'e')('L'|'l')('E'|'e')('C'|'c')('T'|'t');
+
+/* from */
+FROM: ('F'|'f')('R'|'r')('O'|'o')('M'|'m');
+
+/* where */
+WHERE: ('W'|'w')('H'|'h')('E'|'e')('R'|'r')('E'|'e');
+
+/* order by */
+ORDER_BY: ('O'|'o')('R'|'r')('D'|'d')('E'|'e')('R'|'r')(' '*)('B'|'b')('Y'|'y');
+
+/* and */
+AND: ('A'|'a')('N'|'n')('D'|'d');
+
+/* join, inner join, left join, right join, outer join*/
+JOIN: ((('J'|'j')('O'|'o')('I'|'i')('N'|'n'))
+       |(('I'|'i')('N'|'n')('N'|'n')('E'|'e')('R'|'r')(' '*)('J'|'j')('O'|'o')('I'|'i')('N'|'n'))
+       |(('L'|'l')('E'|'e')('F'|'f')('T'|'t')(' '*)('J'|'j')('O'|'o')('I'|'i')('N'|'n'))
+       |(('R'|'r')('I'|'i')('G'|'g')('H'|'h')('T'|'t')(' '*)('J'|'j')('O'|'o')('I'|'i')('N'|'n'))
+       |(('O'|'o')('U'|'u')('T'|'t')('E'|'e')('R'|'r')(' '*)('J'|'j')('O'|'o')('I'|'i')('N'|'n'))
+       );
+
+/* is null, is not null */
+NULL: ((('I'|'i')('S'|'s')(' '*)('N'|'n')('U'|'u')('L'|'l')('L'|'l'))
+          |(('I'|'i')('S'|'s')(' '*)('N'|'n')('O'|'o')('T'|'t')(' '*)('N'|'n')('U'|'u')('L'|'l')('L'|'l'))
+         );
+
+/* on */
+ON: ('O'|'o')('N'|'n');
+
+IN: (('I'|'i')('N'|'n')|('N'|'n')('O'|'o')('T'|'t')(' '+)('I'|'i')('N'|'n'));
+
+OPERATORS: ('&lt;'|'&gt;'|'='|'!='|IN);
+
+NAME: (LETTER|NUMBER) (LETTER|NUMBER|'_'|'.')*;
+
+fragment LETTER: ('a'..'z'|'A'..'Z');
+
+fragment NUMBER: '0'..'9';
+
+ASTERISK: '*';
+
+NAME_ASTERISK: NAME ASTERISK;
+
+COMMA: ',';
+
+LPAREN: '(';
+
+RPAREN: ')';
+
+QUOTED_STATEMENT: '\'' .* '\'';
+
+WS: (' '|'\n'|'\r')+ {skip();};
+
+SL_COMMENT: '--' .* '\n' {$channel=HIDDEN;};
+
+ML_COMMENT: '/*' .* '*/' {$channel=HIDDEN;};</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_languagehierarchy"><a class="anchor" href="#_2_languagehierarchy"></a>2) LanguageHierarchy</h3>
+<div class="paragraph">
+<p>LanguageHierarchy contains a list of token types for our language.</p>
+</div>
+<div class="paragraph">
+<p>First though I would recommend taking the tokens file that ANTLR generated and create an enum class that represents the tokens.
+Having your own enum class will come in handy when you decide to include features like code formatting.
+This enum will be used to create TokenId objects in the LanguageHierarchy next.
+It is not strictly necessary though as you could just create TokenId objects in the LanguageHierarchy directly.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-antlr hljs" data-lang="antlr">public enum TokenType {
+
+    WHERE(6, "keyword"),
+    LETTER(21, "character"),
+    NULL(18, "keyword"),
+    NUMBER(22, "character"),
+    ON(13, "keyword"),
+    NAME_ASTERISK(11, "character"),
+    AND(16, "keyword"),
+    JOIN(12, "keyword"),
+    ASTERISK(10, "character"),
+    LPAREN(14, "character"),
+    ML_COMMENT(25, "comment"),
+    RPAREN(15, "character"),
+    NAME(9, "character"),
+    WS(23, "whitespace"),
+    IN(20, "keyword"),
+    COMMA(8, "character"),
+    SL_COMMENT(24, "comment"),
+    QUOTED_STATEMENT(19, "character"),
+    OPERATORS(17, "character"),
+    FROM(5, "keyword"),
+    SELECT(4, "keyword"),
+    ORDER_BY(7, "keyword");
+
+    public int id;
+    public String category;
+    public String text;
+
+    private TokenType(int id, String category) {
+        this.id = id;
+        this.category = category;
+    }
+
+    public static TokenType valueOf(int id) {
+        TokenType[] values = values();
+        for (TokenType value : values) {
+            if (value.id == id) {
+                return value;
+            }
+        }
+        throw new IllegalArgumentException("The id " + id + " is not recognized");
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then create the LanguageHierarchy class. Notice how we iterate over the TokenType enum and convert it into a TokenId object.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.netbeans.spi.lexer.LanguageHierarchy;
+import org.netbeans.spi.lexer.Lexer;
+import org.netbeans.spi.lexer.LexerRestartInfo;
+
+public class SqlLanguageHierarchy extends LanguageHierarchy&lt;SqlTokenId&gt; {
+
+    private static List&lt;SqlTokenId&gt; tokens = new ArrayList&lt;SqlTokenId&gt;();
+    private static Map&lt;Integer, SqlTokenId&gt; idToToken = new HashMap&lt;Integer, SqlTokenId&gt;();
+
+    static {
+        TokenType[] tokenTypes = TokenType.values();
+        for (TokenType tokenType : tokenTypes) {
+            tokens.add(new SqlTokenId(tokenType.name(), tokenType.category, tokenType.id));
+        }
+        for (SqlTokenId token : tokens) {
+            idToToken.put(token.ordinal(), token);
+        }
+    }
+
+    static synchronized SqlTokenId getToken(int id) {
+        return idToToken.get(id);
+    }
+
+    protected synchronized Collection&lt;SqlTokenId&gt; createTokenIds() {
+        return tokens;
+    }
+
+    protected synchronized Lexer&lt;SqlTokenId&gt; createLexer(LexerRestartInfo&lt;SqlTokenId&gt; info) {
+        return new SqlLexer(info);
+    }
+
+    protected String mimeType() {
+        return "text/x-sqlr";
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_tokenid"><a class="anchor" href="#_3_tokenid"></a>3) TokenId</h3>
+<div class="paragraph">
+<p>To get the SqlEditorLanguageHierarchy class to compile you need a boilerplate TokenId implementation.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.netbeans.api.lexer.Language;
+import org.netbeans.api.lexer.TokenId;
+
+public class SqlTokenId implements TokenId {
+
+    private static final Language&lt;SqlTokenId&gt; language = new SqlLanguageHierarchy().language();
+    private final String name;
+    private final String primaryCategory;
+    private final int id;
+
+    public SqlTokenId(String name, String primaryCategory, int id) {
+        this.name = name;
+        this.primaryCategory = primaryCategory;
+        this.id = id;
+    }
+
+    public String primaryCategory() {
+        return primaryCategory;
+    }
+
+    public int ordinal() {
+        return id;
+    }
+
+    public String name() {
+        return name;
+    }
+
+    public static final Language&lt;SqlTokenId&gt; getLanguage() {
+        return language;
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_4_integrate_lexer_to_netbeans"><a class="anchor" href="#_4_integrate_lexer_to_netbeans"></a>4) Integrate lexer to NetBeans</h3>
+<div class="paragraph">
+<p>Now we can pull it all together to plug the lexer into the NetBeans Platform.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.antlr.runtime.Token;
+import org.netbeans.spi.lexer.Lexer;
+import org.netbeans.spi.lexer.LexerRestartInfo;
+
+public class SqlLexer implements Lexer&lt;SqlTokenId&gt; {
+
+    private LexerRestartInfo&lt;SqlTokenId&gt; info;
+
+    private OracleLexer oracleLexer;
+
+    public SqlLexer(LexerRestartInfo&lt;SqlTokenId&gt; info) {
+        this.info = info;
+
+        AntlrCharStream charStream = new AntlrCharStream(info.input(), "SqlEditor");
+        oracleLexer = new OracleLexer(charStream);
+    }
+
+    public org.netbeans.api.lexer.Token&lt;SqlTokenId&gt; nextToken() {
+        Token token = oracleLexer.nextToken();
+        if (token.getType() != OracleLexer.EOF) {
+            SqlTokenId tokenId = SqlLanguageHierarchy.getToken(token.getType());
+            return info.tokenFactory().createToken(tokenId);
+        }
+        return null;
+    }
+
+    public Object state() {
+        return null;
+    }
+
+    public void release() {}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>But there is still one last very important detail, and that is how to get NetBeans Platform to delegate to your Lexer.
+For that what you need to do is implement your own CharStream implementation.</p>
+</div>
+<div class="paragraph">
+<p>Before sitting down to create this I first checked the NetBeans Platform mailing list to see if this had already been done in another project.
+As it turns out I received a CharStream implementation that works perfectly.
+I wanted to make sure that this class was available (as did the original author) so feel free to take it and put it in your project.
+Also, if you find any improvements be sore to post those changes back.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.antlr.runtime.CharStream;
+import org.netbeans.spi.lexer.LexerInput;
+
+/**
+ * @author jonny
+ */
+public class AntlrCharStream implements CharStream {
+
+    private class CharStreamState {
+        int index;
+        int line;
+        int charPositionInLine;
+    }
+
+    private int line = 1;
+    private int charPositionInLine = 0;
+    private LexerInput input;
+    private String name;
+    private int index = 0;
+    private List&lt;CharStreamState&gt; markers;
+    private int markDepth = 0;
+    private int lastMarker;
+
+    public AntlrCharStream(LexerInput input, String name) {
+        this.input = input;
+        this.name = name;
+    }
+
+    public String substring(int start, int stop) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public int LT(int i) {
+        return LA(i);
+    }
+
+    public int getLine() {
+        return line;
+    }
+
+    public void setLine(int line) {
+        this.line = line;
+    }
+
+    public void setCharPositionInLine(int pos) {
+        this.charPositionInLine = pos;
+    }
+
+    public int getCharPositionInLine() {
+        return charPositionInLine;
+    }
+
+    public void consume() {
+        int c = input.read();
+        index++;
+        charPositionInLine++;
+
+        if (c == '\n') {
+            line++;
+            charPositionInLine = 0;
+        }
+    }
+
+    public int LA(int i) {
+        if (i == 0) {
+            return 0; // undefined
+        }
+
+        int c = 0;
+        for (int j = 0; j &lt; i; j++) {
+            c = read();
+        }
+        backup(i);
+        return c;
+    }
+
+    public int mark() {
+        if (markers == null) {
+            markers = new ArrayList&lt;CharStreamState&gt;();
+            markers.add(null); // depth 0 means no backtracking, leave blank
+        }
+        markDepth++;
+        CharStreamState state = null;
+        if (markDepth &gt;= markers.size()) {
+            state = new CharStreamState();
+            markers.add(state);
+        } else {
+            state = (CharStreamState) markers.get(markDepth);
+        }
+        state.index = index;
+        state.line = line;
+        state.charPositionInLine = charPositionInLine;
+        lastMarker = markDepth;
+
+        return markDepth;
+    }
+
+    public void rewind() {
+        rewind(lastMarker);
+    }
+
+    public void rewind(int marker) {
+        CharStreamState state = (CharStreamState) markers.get(marker);
+        // restore stream state
+        seek(state.index);
+        line = state.line;
+        charPositionInLine = state.charPositionInLine;
+        release(marker);
+    }
+
+    public void release(int marker) {
+        // unwind any other markers made after m and release m
+        markDepth = marker;
+        // release this marker
+        markDepth--;
+    }
+
+    public void seek(int index) {
+        if (index &lt; this.index) {
+            backup(this.index - index);
+            this.index = index; // just jump; don't update stream state (line, ...)
+            return;
+        }
+
+        // seek forward, consume until p hits index
+        while (this.index &lt; index) {
+            consume();
+        }
+    }
+
+    public int index() {
+        return index;
+    }
+
+    public int size() {
+        return -1; //unknown...
+    }
+
+    public String getSourceName() {
+        return name;
+    }
+
+    private int read() {
+        int result = input.read();
+        if (result == LexerInput.EOF) {
+            result = CharStream.EOF;
+        }
+
+        return result;
+    }
+
+    private void backup(int count) {
+        input.backup(count);
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_5_configuration_file_changes"><a class="anchor" href="#_5_configuration_file_changes"></a>5) Configuration File Changes</h3>
+<div class="paragraph">
+<p>This is the list of configuration changes that I had to make to get everything hooked up.</p>
+</div>
+<div class="paragraph">
+<p>Create a FontAndColors.xml file.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!DOCTYPE fontscolors PUBLIC "-//NetBeans//DTD Editor Fonts and Colors settings 1.1//EN" "http://www.netbeans.org/dtds/EditorFontsColors-1_1.dtd"&gt;
+&lt;fontscolors&gt;
+    &lt;fontcolor name="comment" default="comment"/&gt;
+    &lt;fontcolor name="keyword" default="keyword"/&gt;
+    &lt;fontcolor name="whitespace" default="whitespace"/&gt;
+    &lt;fontcolor name="character" default="character"/&gt;
+&lt;/fontscolors&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Update your Bundles.properties file.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">character=Character
+keyword=Keyword
+comment=Comment
+whitespace=Whitespace</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Lastly, update your Layer.xml file.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;folder name="Editors"&gt;
+    &lt;folder name="text"&gt;
+        &lt;folder name="x-sqlr"&gt;
+            &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="com.sqlraider.editor.Bundle"/&gt;
+            &lt;file name="language.instance"&gt;
+                &lt;attr name="instanceCreate" methodvalue="com.sqlraider.editor.lexer.SqlTokenId.getLanguage"/&gt;
+                &lt;attr name="instanceOf" stringvalue="org.netbeans.api.lexer.Language"/&gt;
+            &lt;/file&gt;
+            &lt;folder name="FontsColors"&gt;
+                &lt;folder name="NetBeans"&gt;
+                    &lt;folder name="Defaults"&gt;
+                        &lt;file name="FontAndColors.xml" url="FontAndColors.xml"&gt;
+                            &lt;attr name="SystemFileSystem.localizingBundle" stringvalue="com.sqlraider.editor.Bundle"/&gt;
+                        &lt;/file&gt;
+                    &lt;/folder&gt;
+                &lt;/folder&gt;
+            &lt;/folder&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;
+&lt;folder name="OptionsDialog"&gt;
+    &lt;folder name="PreviewExamples"&gt;
+        &lt;folder name="text"&gt;
+            &lt;file name="x-sqlr" url="SqlTemplate.sqlr"/&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parser_for_syntax_error"><a class="anchor" href="#_parser_for_syntax_error"></a>Parser for Syntax Error</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Using the same grammer file (top of tutorial) ANTLR will also generate a SqlParser.java file.</p>
+</div>
+<div class="sect2">
+<h3 id="_1_integrate_parser_into_netbeans_platform"><a class="anchor" href="#_1_integrate_parser_into_netbeans_platform"></a>1) Integrate parser into NetBeans Platform</h3>
+<div class="paragraph">
+<p>Extend the NetBeans Platform parser to integrate ANTLR.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import com.sqlraider.editor.lexer.SqlLexer;
+import javax.swing.event.ChangeListener;
+import org.antlr.runtime.ANTLRStringStream;
+import org.antlr.runtime.CommonTokenStream;
+import org.antlr.runtime.Lexer;
+import org.netbeans.modules.parsing.api.Snapshot;
+import org.netbeans.modules.parsing.api.Task;
+import org.netbeans.modules.parsing.spi.ParseException;
+import org.netbeans.modules.parsing.spi.Parser;
+import org.netbeans.modules.parsing.spi.SourceModificationEvent;
+
+public class SqlParser extends Parser {
+
+    private Snapshot snapshot;
+    private OracleParser oracleParser;
+
+    public void parse(Snapshot snapshot, Task task, SourceModificationEvent event) {
+        this.snapshot = snapshot;
+        ANTLRStringStream input = new ANTLRStringStream(snapshot.getText().toString());
+        Lexer lexer = new OracleLexer(input);
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        oracleParser = new OracleParser(tokens);
+        try {
+            oracleParser.prog();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public Result getResult(Task task) {
+        return new SqlEditorParserResult(snapshot, oracleParser);
+    }
+
+    public void cancel() {}
+
+    public void addChangeListener(ChangeListener changeListener) {}
+
+    public void removeChangeListener(ChangeListener changeListener) {}
+
+    public static class SqlEditorParserResult extends Result {
+
+        private OracleParser sqlParser;
+        private boolean valid = true;
+
+        SqlEditorParserResult(Snapshot snapshot, OracleParser oracleParser) {
+            super(snapshot);
+            this.sqlParser = oracleParser;
+        }
+
+        public OracleParser getSqlParser()
+                throws ParseException {
+            if (!valid) {
+                throw new ParseException();
+            }
+            return sqlParser;
+        }
+
+        protected void invalidate() {
+            valid = false;
+        }
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_syntaxerrorshighlightingtask"><a class="anchor" href="#_2_syntaxerrorshighlightingtask"></a>2) SyntaxErrorsHighlightingTask</h3>
+<div class="paragraph">
+<p>This is where the real interesting code is.
+What we are doing is getting a hold of the custom syntaxErrors List that we declared in the @members section of our grammer.
+As you can tell what I did was override the getErrorMessage() method of the ANTLR parser to track errors.
+In the future this will have to be improved so that the error text is more clear.
+However, the getErrorMessage() method seems like the correct extension point as ANTLR will always call this method when an error occurs.
+What is really nice is that ANTLR will roll up errors so that the user is not bombarded with similar errors at the same point in the syntax.</p>
+</div>
+<div class="paragraph">
+<p>Note: future version of this class should use the ErrorDescriptionFactory.createErrorDescription() method that will error out at the exact
+syntax within the line as well as on the line itself.
+Right now the user will only know which line has the problem.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import com.sqlraider.editor.parser.SqlParser.SyntaxError;
+import javax.swing.text.Document;
+import org.antlr.runtime.RecognitionException;
+import org.netbeans.modules.parsing.spi.Parser.Result;
+import org.netbeans.modules.parsing.spi.ParserResultTask;
+import org.netbeans.modules.parsing.spi.Scheduler;
+import org.netbeans.modules.parsing.spi.SchedulerEvent;
+import org.netbeans.spi.editor.hints.ErrorDescription;
+import org.netbeans.spi.editor.hints.ErrorDescriptionFactory;
+import org.netbeans.spi.editor.hints.HintsController;
+import org.netbeans.spi.editor.hints.Severity;
+
+public class SyntaxErrorsHighlightingTask extends ParserResultTask {
+
+    public SyntaxErrorsHighlightingTask() {
+    }
+
+    public void run(Result result, SchedulerEvent event) {
+        try {
+            SqlParser.SqlEditorParserResult sjResult = (SqlParser.SqlEditorParserResult) result;
+            List&lt;SyntaxError&gt; syntaxErrors = sjResult.getSqlParser().syntaxErrors;
+            Document document = result.getSnapshot().getSource().getDocument(false);
+            List&lt;ErrorDescription&gt; errors = new ArrayList&lt;ErrorDescription&gt;();
+            for (SyntaxError syntaxError : syntaxErrors) {
+                RecognitionException exception = syntaxError.exception;
+                String message = syntaxError.message;
+
+                int line = exception.line;
+                if (line &lt;= 0) {
+                    continue;
+                }
+                ErrorDescription errorDescription = ErrorDescriptionFactory.createErrorDescription(
+                        Severity.ERROR,
+                        message,
+                        document,
+                        line);
+                errors.add(errorDescription);
+            }
+            HintsController.setErrors(document, "sqlr", errors);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public int getPriority() {
+        return 100;
+    }
+
+    public Class&lt;? extends Scheduler&gt; getSchedulerClass() {
+        return Scheduler.EDITOR_SENSITIVE_TASK_SCHEDULER;
+    }
+
+    public void cancel() {
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_sqleditorparserfactory_and_syntaxerrorshighlightingtaskfactory"><a class="anchor" href="#_3_sqleditorparserfactory_and_syntaxerrorshighlightingtaskfactory"></a>3) SqlEditorParserFactory And SyntaxErrorsHighlightingTaskFactory</h3>
+<div class="paragraph">
+<p>The next two classes are boilerplate implementations so that NetBeans Platform can parse your file as you type.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.netbeans.modules.parsing.api.Snapshot;
+import org.netbeans.modules.parsing.spi.Parser;
+import org.netbeans.modules.parsing.spi.ParserFactory;
+
+public class SqlParserFactory extends ParserFactory {
+
+    @Override
+    public Parser createParser(Collection&lt;Snapshot&gt; snapshots) {
+        return new SqlParser();
+    }
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.netbeans.modules.parsing.api.Snapshot;
+import org.netbeans.modules.parsing.spi.SchedulerTask;
+import org.netbeans.modules.parsing.spi.TaskFactory;
+
+public class SyntaxErrorsHighlightingTaskFactory extends TaskFactory {
+
+    public Collection&lt;? extends SchedulerTask&gt; create (Snapshot snapshot) {
+        return Collections.singleton (new SyntaxErrorsHighlightingTask ());
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_4_configuration_file_changes"><a class="anchor" href="#_4_configuration_file_changes"></a>4) Configuration File Changes</h3>
+<div class="paragraph">
+<p>This is the list of configuration changes that I had to make to get everything hooked up.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;folder name="Editors"&gt;
+    &lt;folder name="text"&gt;
+        &lt;folder name="x-sqlr"&gt;
+            &lt;file name="com-sqlraider-editor-parser-SqlParserFactory.instance"/&gt;
+            &lt;file name="com-sqlraider-editor-parser-SyntaxErrorsHighlightingTaskFactory.instance"/&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</code></pre>
+</div>
+</div>
 </div>
 </div>
 </div>

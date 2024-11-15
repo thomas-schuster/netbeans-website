@@ -3,12 +3,12 @@
     <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>How to create support for a new language</title>
+    <title>Netbeans Rcp Antlr Format And Indent</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Apache NetBeans wiki How_to_create_support_for_a_new_language">
+    <meta name="description" content="Apache NetBeans wiki Netbeans Rcp Antlr Format And Indent">
     <meta name="author" content="Apache NetBeans">
-    <meta name="description" content="Apache NetBeans wiki How_to_create_support_for_a_new_language">
-    <meta name="keywords" content="Apache NetBeans wiki How_to_create_support_for_a_new_language">
+    <meta name="description" content="Apache NetBeans wiki Netbeans Rcp Antlr Format And Indent">
+    <meta name="keywords" content="Apache NetBeans wiki Netbeans Rcp Antlr Format And Indent">
     <meta name="generator" content="Apache NetBeans">
     <link rel="stylesheet" href="../../../../_/css/font-awesome.min.css">
     <link rel="alternate" type="application/atom+xml" title="Apache NetBeans Blog" href="https://netbeans.apache.org/blogs/atom" />
@@ -1609,44 +1609,182 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../">Apache NetBeans Wiki</a></li>
-    <li><a href="./">How to create support for a new language</a></li>
+    <li><a href="./">Netbeans Rcp Antlr Format And Indent</a></li>
   </ul>
 </nav>
-<div class="edit-this-page"><a href="https://github.com/apache/netbeans-antora-wiki/edit/main/modules/ROOT/pages/wiki/How_to_create_support_for_a_new_language.adoc">Edit this Page</a></div>
+<div class="edit-this-page"><a href="https://github.com/apache/netbeans-antora-wiki/edit/main/modules/ROOT/pages/wiki/Netbeans_Rcp_Antlr_Format_And_Indent.adoc">Edit this Page</a></div>
 </div>
   <div class="content">
 <aside class="toc sidebar" data-title="Contents" data-levels="2">
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">How to create support for a new language</h1>
+<h1 class="page">Netbeans Rcp Antlr Format And Indent</h1>
 <div id="toc" class="toc">
 <div id="toctitle"></div>
 <ul class="sectlevel1">
-<li><a href="#_new_language_support_tutorial">New Language Support Tutorial</a></li>
+<li><a href="#_indenttask">IndentTask</a>
+<ul class="sectlevel2">
+<li><a href="#_1">1.</a></li>
+<li><a href="#_2">2.</a></li>
+<li><a href="#_3">3.</a></li>
+</ul>
+</li>
+<li><a href="#_reformattask">ReformatTask</a>
+<ul class="sectlevel2">
+<li><a href="#_1_2">1.</a></li>
+<li><a href="#_2_2">2.</a></li>
+<li><a href="#_3_2">3.</a></li>
+</ul>
+</li>
 </ul>
 </div>
-<div class="sect1">
-<h2 id="_new_language_support_tutorial"><a class="anchor" href="#_new_language_support_tutorial"></a>New Language Support Tutorial</h2>
+<div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>﻿﻿﻿The replacement tutorials for javacc are:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><a href="../../../../tutorial/main/tutorials/nbm-javacc-lexer/" class="xref page">JavaCC Lexer Generator Integration Tutorial for the NetBeans Platform</a></p>
-</li>
-<li>
-<p><a href="../../../../tutorial/main/tutorials/nbm-javacc-parser/" class="xref page">JavaCC Parser Generator Integration Tutorial for the NetBeans Platform</a></p>
-</li>
-</ul>
+<p>I do not have the formatting and indenting fully working yet, but I did figure out the integration points.
+It took me almost a full day to figure out how to just get that working so I figure it was worth at least starting a tutorial.</p>
 </div>
 <div class="paragraph">
-<p>Some information for antlr integration:</p>
+<p>It is actually quite simple!
+And, once you have things registered correctly, the next step (to be documented later) will be to use your ANTLR Lexer to do the formatting.</p>
 </div>
 <div class="paragraph">
-<p><a href="../Netbeans_Rcp_Antlr_Integration_Index/" class="xref page">Netbeans Rcp Antlr Integration Index</a></p>
+<p>This is part of the <a href="../Netbeans_Rcp_Antlr_Integration_Index/" class="xref page">ANTLR integration tutorials</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_indenttask"><a class="anchor" href="#_indenttask"></a>IndentTask</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_1"><a class="anchor" href="#_1"></a>1.</h3>
+<div class="paragraph">
+<p>The indent task will make a callback to the reindent() method when the enter key is pressed while editing. The Context object contains everything that you will need, including the editor document object. It should just be a matter of taking the text after the cursor and before the next line and indenting things properly.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class SqlIndentTask implements IndentTask {
+
+    private Context context;
+
+    SqlIndentTask(Context context) {
+        this.context = context;
+    }
+
+    public void reindent() throws BadLocationException {
+        System.out.println("we will indent this now");
+    }
+
+    public ExtraLock indentLock() {
+        return null;
+    }
+
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2"><a class="anchor" href="#_2"></a>2.</h3>
+<div class="paragraph">
+<p>The IndentTask.Factory is the hook for Netbeans to use your IndentTask.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class SqlIndentTaskFactory implements IndentTask.Factory {
+
+    public IndentTask createTask(Context context) {
+        return new SqlIndentTask(context);
+    }
+
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3"><a class="anchor" href="#_3"></a>3.</h3>
+<div class="paragraph">
+<p>Lastly, register the IndentTask with the layer.xml file.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;folder name="Editors"&gt;
+    &lt;folder name="text"&gt;
+        &lt;folder name="x-sqlr"&gt;
+            &lt;file name="com-sqlraider-editor-format-SqlIndentTaskFactory.instance"/&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reformattask"><a class="anchor" href="#_reformattask"></a>ReformatTask</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_1_2"><a class="anchor" href="#_1_2"></a>1.</h3>
+<div class="paragraph">
+<p>The reformat task will make a callback to the reformat() method when you invoke the built in Netbeans format command. In other words when you use the menu Source &#8594; Format action or press Alt+Shift+F. The Context object contains everything that you will need, including the editor document object. It should just be a matter of taking the text and running it through the ANTLR Lexer to format things properly.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class SqlReformatTask implements ReformatTask {
+
+    private Context context;
+
+    public SqlReformatTask(Context context) {
+        this.context = context;
+    }
+
+    @Override
+    public void reformat()
+            throws BadLocationException {
+        System.out.println("we will format this now");
+    }
+
+    @Override
+    public ExtraLock reformatLock() {
+        return null;
+    }
+
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_2"><a class="anchor" href="#_2_2"></a>2.</h3>
+<div class="paragraph">
+<p>The ReformatTask.Factory is the hook for Netbeans to use your ReformatTask.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class SqlReformatTaskFactory implements ReformatTask.Factory {
+
+    public ReformatTask createTask(Context context) {
+        return new SqlReformatTask(context);
+    }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_2"><a class="anchor" href="#_3_2"></a>3.</h3>
+<div class="paragraph">
+<p>Lastly, register the ReformatTask with the layer.xml file.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;folder name="Editors"&gt;
+    &lt;folder name="text"&gt;
+        &lt;folder name="x-sqlr"&gt;
+            &lt;file name="com-sqlraider-editor-format-SqlReformatTaskFactory.instance"/&gt;
+        &lt;/folder&gt;
+    &lt;/folder&gt;
+&lt;/folder&gt;</code></pre>
+</div>
+</div>
 </div>
 </div>
 </div>

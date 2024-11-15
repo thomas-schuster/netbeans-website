@@ -3,12 +3,12 @@
     <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>How to create support for a new language</title>
+    <title>Antlr Notes</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Apache NetBeans wiki How_to_create_support_for_a_new_language">
+    <meta name="description" content="Apache NetBeans wiki Antlr_Notes">
     <meta name="author" content="Apache NetBeans">
-    <meta name="description" content="Apache NetBeans wiki How_to_create_support_for_a_new_language">
-    <meta name="keywords" content="Apache NetBeans wiki How_to_create_support_for_a_new_language">
+    <meta name="description" content="Apache NetBeans wiki Antlr_Notes">
+    <meta name="keywords" content="Apache NetBeans wiki Antlr_Notes">
     <meta name="generator" content="Apache NetBeans">
     <link rel="stylesheet" href="../../../../_/css/font-awesome.min.css">
     <link rel="alternate" type="application/atom+xml" title="Apache NetBeans Blog" href="https://netbeans.apache.org/blogs/atom" />
@@ -1609,44 +1609,248 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../">Apache NetBeans Wiki</a></li>
-    <li><a href="./">How to create support for a new language</a></li>
+    <li><a href="./">Antlr Notes</a></li>
   </ul>
 </nav>
-<div class="edit-this-page"><a href="https://github.com/apache/netbeans-antora-wiki/edit/main/modules/ROOT/pages/wiki/How_to_create_support_for_a_new_language.adoc">Edit this Page</a></div>
+<div class="edit-this-page"><a href="https://github.com/apache/netbeans-antora-wiki/edit/main/modules/ROOT/pages/wiki/Antlr_Notes.adoc">Edit this Page</a></div>
 </div>
   <div class="content">
 <aside class="toc sidebar" data-title="Contents" data-levels="2">
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">How to create support for a new language</h1>
+<h1 class="page">Antlr Notes</h1>
 <div id="toc" class="toc">
 <div id="toctitle"></div>
 <ul class="sectlevel1">
-<li><a href="#_new_language_support_tutorial">New Language Support Tutorial</a></li>
+<li><a href="#_antlr_antlrworks">Antlr &amp; AntlrWorks</a></li>
+<li><a href="#_languagehierachy_java">LanguageHierachy.java</a></li>
+<li><a href="#_the_fontandcolors_xml_file">The FontAndColors.xml file</a></li>
+<li><a href="#_syntax_error_highlights">Syntax Error Highlights</a></li>
+<li><a href="#_handling_c_style_comments">Handling C-Style Comments /* &#8230;&#8203; */</a></li>
 </ul>
 </div>
-<div class="sect1">
-<h2 id="_new_language_support_tutorial"><a class="anchor" href="#_new_language_support_tutorial"></a>New Language Support Tutorial</h2>
+<div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>﻿﻿﻿The replacement tutorials for javacc are:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><a href="../../../../tutorial/main/tutorials/nbm-javacc-lexer/" class="xref page">JavaCC Lexer Generator Integration Tutorial for the NetBeans Platform</a></p>
-</li>
-<li>
-<p><a href="../../../../tutorial/main/tutorials/nbm-javacc-parser/" class="xref page">JavaCC Parser Generator Integration Tutorial for the NetBeans Platform</a></p>
-</li>
-</ul>
+<p>Author: Joe Areeda</p>
 </div>
 <div class="paragraph">
-<p>Some information for antlr integration:</p>
+<p>I started from scratch to implementing an antlr lexer/parser following the tutorial <a href="../New_Language_Support_Tutorial_Antlr/" class="xref page">highlight syntax and check errors</a>.
+It was very helpful as was its author, so I thought I&#8217;d add some notes on what I learned in the process.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_antlr_antlrworks"><a class="anchor" href="#_antlr_antlrworks"></a>Antlr &amp; AntlrWorks</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>I found AntlrWorks an amazing IDE for developing the lexer and parser.
+The debugger and the visual depiction of NFA/DFA rules and parse trees made the job so much easier than I remember.
+Both can be downloaded for free from link:https://www.antlr.org/.</p>
 </div>
 <div class="paragraph">
-<p><a href="../Netbeans_Rcp_Antlr_Integration_Index/" class="xref page">Netbeans Rcp Antlr Integration Index</a></p>
+<p>To integrate antlr into a project, create a library wrapper module with the appropriate jar file. Note that the project cannot be a module, but must be a module suite as far as I know. I also suggest that if you use antlr use the antlr-runtime.jar and if you use antlrWorks use the whole antlrworks-x.x.x.jar to avoid a version mismatch.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_languagehierachy_java"><a class="anchor" href="#_languagehierachy_java"></a>LanguageHierachy.java</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In the original tutorial Jeff uses constructs like this to define the tokenIDs</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-javacc hljs" data-lang="javacc">    new SqlTokenId ("WHERE", "keyword", 6),
+    new SqlTokenId ("LETTER", "character", 21),
+    new SqlTokenId ("NULL", "keyword", 18),</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-javacc hljs" data-lang="javacc">The only problem with this is that antlr assigns the numeric token values in a seemingly random order. Adding or deleting a token can change many values so I use the following code to do it symbolically:
+
+    new UnoTokenId (unoidlParser.tokenNames[UnoidlLexer.AND], "idl-text", unoidlLexer.AND),
+    new UnoTokenId (unoidlParser.tokenNames[UnoidlLexer.ANY], "idl-type", unoidlLexer.ANY),
+    new UnoTokenId (unoidlParser.tokenNames[UnoidlLexer.ATTRIBUTE], "idl-keyword", unoidlLexer.ATTRIBUTE),</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When antlr compiles a grammar it produces a file called &lt;grammarName&gt;.tokens that contains the token numbers:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-javacc hljs" data-lang="javacc">COMMA=13
+TRANSIENT=22
+TILDE=71
+LEFTSHIFT=64
+PLUS=66</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A simple awk script can create the TokenId contructors:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">sort output/unoidl.tokens | \
+awk --field-separator "=" '{print ("new UnoTokenId (unoidlParser.tokenNames[unoidlLexer." \
+$1 "], \"idl-keyword\", unoidlLexer." $1 "),");}' | vi -</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Include the output in your LanguageHierarchy class and edit the "idl-keyword" part to assign a coloring class to each token.</p>
+</div>
+<div class="paragraph">
+<p>We need to be cautious when adding a token to the grammar.
+An unknown token type will return a null object to the Syntax Coloring module causing an exception reporting dialog.
+However when we delete a token we get a syntax error in LanguageHierarchy class marking the line to delete.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_fontandcolors_xml_file"><a class="anchor" href="#_the_fontandcolors_xml_file"></a>The FontAndColors.xml file</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It is also possible to specify your default colors and font styles in this file. For example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!DOCTYPE fontscolors PUBLIC "-//NetBeans//DTD Editor Fonts and Colors settings 1.1//EN" "http://www.netbeans.org/dtds/EditorFontsColors-1_1.dtd"&gt;
+&lt;fontscolors&gt;
+    &lt;fontcolor name="idl-attr"          foreColor="blue" default="default"&gt;
+        &lt;font style="italic" /&gt;
+    &lt;/fontcolor&gt;
+    &lt;fontcolor name="idl-bracket"       foreColor="blue" default="default"/&gt;
+    &lt;fontcolor name="idl-char"          foreColor="ff00aa00" default="default"/&gt;
+    &lt;fontcolor name="idl-comment"       foreColor="gray" default="default"/&gt;
+    &lt;fontcolor name="idl-exception"     foreColor="magenta" default="default"&gt;
+        &lt;font style="bold" /&gt;
+    &lt;/fontcolor&gt;
+    &lt;fontcolor name="idl-function"      foreColor="black" default="default"&gt;
+        &lt;font style="bold" /&gt;
+&lt;/fontscolors&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_syntax_error_highlights"><a class="anchor" href="#_syntax_error_highlights"></a>Syntax Error Highlights</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To highlight the token causing an error, add the following code to your grammar:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-antlr hljs" data-lang="antlr">@members {
+	public List&lt;SyntaxError&gt; syntaxErrors = new ArrayList&lt;SyntaxError&gt;();
+
+	@Override
+    	public String getErrorMessage(RecognitionException e, String[] tokenNames) {
+    		String message = super.getErrorMessage(e, tokenNames);
+    		SyntaxError syntaxError = new SyntaxError();
+    		syntaxError.exception = e;
+    		syntaxError.message = message;
+
+                CommonToken token =  (CommonToken) e.token;
+
+                syntaxError.line = e.token.getLine();
+                syntaxError.charPositionInLine = e.token.getCharPositionInLine();
+                syntaxError.start = token.getStartIndex();
+
+                syntaxError.stop = token.getStopIndex()+1;
+
+    		syntaxErrors.add(syntaxError);
+    		return message;
+    	}
+
+    	public static class SyntaxError {
+    		public RecognitionException exception;
+    		public String message;
+    		public int line;
+    		public int charPositionInLine;
+                public int start,stop;
+    	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The difference between this and Jeff&#8217;s code is the cast of the token contained in the exception to a CommonToken
+which allows access to the getStartIndex and getStopIndex methods.
+These are offsets into the document being parsed. Note the stop index is incremented.
+Then in the SyntaxErrorsHighlightingTask replace the call to createErrorDescription with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">                ErrorDescription errorDescription = ErrorDescriptionFactory.createErrorDescription(
+                        Severity.ERROR,
+                        message,
+                        document,
+                        document.createPosition(syntaxError.start),
+                        document.createPosition(syntaxError.stop));
+                errors.add(errorDescription);</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_handling_c_style_comments"><a class="anchor" href="#_handling_c_style_comments"></a>Handling C-Style Comments /* &#8230;&#8203; */</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This took me weeks to figure out the mystic incantation to get this to work while you type.
+The problem is once you type the opening /* you comment out the rest of the file and the lexer returns an end of file but no token.
+This causes an exception complaining that we consumed character and return null.</p>
+</div>
+<div class="paragraph">
+<p>The change needed is in the nextToken method of our lexer (the one between the NetBeans Lexer and the Antlr Lexer).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">    public org.netbeans.api.lexer.Token&lt;UnoTokenId&gt; nextToken() {
+        Token token = unoLexer.nextToken();
+
+        org.netbeans.api.lexer.Token&lt;UnoTokenId&gt; createdToken = null;
+
+        if (token.getType() != unoidlParser.EOF) {
+            UnoTokenId tokenId = UnoEditorLanguageHierarchy.getToken(token.getType());
+            createdToken = info.tokenFactory().createToken(tokenId);
+        }
+        else if (info.input().readLength() &gt; 0)
+        {   // we have an incomplete token
+            UnoTokenId tokenId = UnoEditorLanguageHierarchy.getToken(unoidlParser.TraditionalComment);
+            createdToken = info.tokenFactory().createToken(tokenId, info.input().readLength(),
+                           PartType.MIDDLE);
+        }
+        return createdToken;
+    }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>By testing the readLength we can see if the situation where an incomplete token eats the rest of the input.
+I do want to separate documentation comments (/**) from other comments of this form but this code assumes that we have only 1 token that will do this.
+If there were multiple types of tokens like this several modifications would be needed to determine which type.
+Note that this means strings cannot contain newlines between quotes without escape characters.
+What&#8217;s important here is the different call to createToken that includes the length and PartType.</p>
+</div>
+<div class="paragraph">
+<p>To help, here is the grammar I use that defines the comment and a string literal.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-antlr hljs" data-lang="antlr">// multiple-line comments
+TraditionalComment
+	:	MLCOMMENTSTART (options {greedy=false;} : .)* MLCOMMENTEND
+         {$channel=HIDDEN;}
+         ;
+fragment StringCharacter
+	:	~('\r' | '\n' | '\u000C' | '&lt;br&gt;' | '"');
+StringLiteral
+    :  	QUOTE ( EscapeSequence | StringCharacter )* QUOTE
+    ;
+fragment QUOTE	:	'\"';
+fragment MLCOMMENTSTART  :	'/*';
+fragment MLCOMMENTEND    :	'*/';</code></pre>
+</div>
 </div>
 </div>
 </div>
